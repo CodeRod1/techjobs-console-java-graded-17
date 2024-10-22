@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -28,15 +27,12 @@ public class JobData {
      * @return List of all of the values of the given field
      */
     public static ArrayList<String> findAll(String field) {
-
-        // load data, if not already loaded
         loadData();
 
         ArrayList<String> values = new ArrayList<>();
 
         for (HashMap<String, String> row : allJobs) {
             String aValue = row.get(field);
-
             if (!values.contains(aValue)) {
                 values.add(aValue);
             }
@@ -46,10 +42,7 @@ public class JobData {
     }
 
     public static ArrayList<HashMap<String, String>> findAll() {
-
-        // load data, if not already loaded
         loadData();
-
         return allJobs;
     }
 
@@ -60,22 +53,19 @@ public class JobData {
      * For example, searching for employer "Enterprise" will include results
      * with "Enterprise Holdings, Inc".
      *
-     * @param column   Column that should be searched.
-     * @param value Value of teh field to search for
+     * @param column Column that should be searched.
+     * @param value  Value of the field to search for
      * @return List of all jobs matching the criteria
      */
     public static ArrayList<HashMap<String, String>> findByColumnAndValue(String column, String value) {
-
-        // load data, if not already loaded
         loadData();
 
         ArrayList<HashMap<String, String>> jobs = new ArrayList<>();
+        String searchValue = value.toLowerCase(); // Convert search term to lower case
 
         for (HashMap<String, String> row : allJobs) {
-
             String aValue = row.get(column);
-
-            if (aValue.contains(value)) {
+            if (aValue != null && aValue.toLowerCase().contains(searchValue)) { // Use toLowerCase() for comparison
                 jobs.add(row);
             }
         }
@@ -83,54 +73,61 @@ public class JobData {
         return jobs;
     }
 
+
     /**
      * Search all columns for the given term
      *
      * @param value The search term to look for
-     * @return      List of all jobs with at least one field containing the value
+     * @return List of all jobs with at least one field containing the value
      */
     public static ArrayList<HashMap<String, String>> findByValue(String value) {
-
-        // load data, if not already loaded
         loadData();
 
-        // TODO - implement this method
-        return null;
+        ArrayList<HashMap<String, String>> jobs = new ArrayList<>();
+        String searchValue = value.toLowerCase(); // Convert search term to lower case
+
+        for (HashMap<String, String> row : allJobs) {
+            for (String key : row.keySet()) {
+                String aValue = row.get(key);
+                if (aValue != null && aValue.toLowerCase().contains(searchValue)) { // Use toLowerCase() for comparison
+                    jobs.add(row);
+                    break; // Stop checking after the first match
+                }
+            }
+        }
+
+        return jobs;
     }
+
 
     /**
      * Read in data from a CSV file and store it in a list
      */
     private static void loadData() {
-
         // Only load data once
         if (isDataLoaded) {
             return;
         }
 
         try {
-
             // Open the CSV file and set up pull out column header info and records
             Reader in = new FileReader(DATA_FILE);
             CSVParser parser = CSVFormat.RFC4180.withFirstRecordAsHeader().parse(in);
             List<CSVRecord> records = parser.getRecords();
-            Integer numberOfColumns = records.get(0).size();
-            String[] headers = parser.getHeaderMap().keySet().toArray(new String[numberOfColumns]);
+            String[] headers = parser.getHeaderMap().keySet().toArray(new String[0]);
 
             allJobs = new ArrayList<>();
 
             // Put the records into a more friendly format
             for (CSVRecord record : records) {
                 HashMap<String, String> newJob = new HashMap<>();
-
                 for (String headerLabel : headers) {
                     newJob.put(headerLabel, record.get(headerLabel));
                 }
-
                 allJobs.add(newJob);
             }
 
-            // flag the data as loaded, so we don't do it twice
+            // Flag the data as loaded, so we don't do it twice
             isDataLoaded = true;
 
         } catch (IOException e) {
@@ -138,5 +135,4 @@ public class JobData {
             e.printStackTrace();
         }
     }
-
 }
